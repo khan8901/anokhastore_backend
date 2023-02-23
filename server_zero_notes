@@ -1,0 +1,19 @@
+create seller integrations 
+
+
+
+created   post seller product routes  
+created   get seller products routes 
+created   get seller order routes
+ 
+ 
+ 
+ 
+  // creating an example 
+  
+  a products is there quantity 
+  stock should not decrease 
+  
+  
+  stock is something personal to the seller it should decrease in seller dashboard only !! 
+  
