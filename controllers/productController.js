@@ -57,7 +57,6 @@ exports.getProducts = catchAsyncErrors(async (req, res, next) => {
     apiFeatures.pagination(resPerPage)
     products = await apiFeatures.query;
 
-       console.log(products," thisis products")
     res.status(200).json({
         success: true,
         productsCount,
@@ -257,14 +256,94 @@ exports.deleteReview = catchAsyncErrors(async (req, res, next) => {
 
 
 exports.sellerProducts = catchAsyncErrors(async(req,res,next) => { 
+  try { 
+    const perPage = 10; 
+
+    const page  = req.params.page ? req.params.page : 1; 
+
 
     const sellerProducts = await Product.find({ user: req.user.id })
+    .skip((page-1) * perPage)
+    .sort({createdAt: -1})
+    .limit(perPage);
+
 
     res.status(200).json({
     success: true,
     sellerProducts,
     });
 
+  } catch(err) { 
+    console.log(err);
+
+  }
 
 })
 
+exports.productliked = catchAsyncErrors(async(req,res,next) => { 
+
+    try { 
+        const product  = await Product.findByIdAndUpdate(req.body.productId, 
+        { 
+            $addToSet : { likes : req.user.id}
+        }, 
+        {new:true}
+        
+        );
+         
+    res.json(product);
+    console.log(product.likes, " these are product likes"); 
+
+
+    }   
+    catch (err) { 
+        console.log(err)
+        
+    };
+
+
+
+})
+
+exports.productunliked = catchAsyncErrors(async(req,res,next) => { 
+
+    try { 
+        const product  = await Product.findByIdAndUpdate(req.body.productId, 
+        { 
+            $pull : { likes : req.user.id}
+        }, 
+        {new:true}
+        
+        );
+         
+    res.json(product);
+
+    }   
+    catch (err) { 
+        console.log(err)
+        
+    };
+
+
+
+})
+
+
+
+exports.productviewed = catchAsyncErrors(async(req, res, next) => { 
+
+    try {
+        const product = await Product.findByIdAndUpdate(
+          req.params.productId,
+          { $inc: { views: 1 } },
+          { new: true }
+        );
+        res.json({ ok: true });
+
+        console.log(product.views, " this is length"); 
+        
+      } catch (err) {
+        console.log(err);
+      }
+
+    })
