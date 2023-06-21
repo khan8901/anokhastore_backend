@@ -12,7 +12,7 @@ const {
 
 } = require('../controllers/orderController')
 
-const { isAuthenticatedUser, authorizeRoles } = require('../middlewares/auth')
+const { isAuthenticatedUser, authorizeRoles } = require('../middlewares/authMiddleware')
 
 
 
@@ -29,9 +29,9 @@ router.route('/seller/order/:id').put(isAuthenticatedUser, updateOrder);
 
 
 
-router.route('/admin/orders/').get(isAuthenticatedUser, authorizeRoles('admin'), allOrders);
+router.route('/admin/orders/').get(isAuthenticatedUser,  allOrders);
 router.route('/admin/order/:id')
-    .put(isAuthenticatedUser, authorizeRoles('admin'), updateOrder)
-    .delete(isAuthenticatedUser, authorizeRoles('admin'), deleteOrder);
+    .put(isAuthenticatedUser,  updateOrder)
+    .delete(isAuthenticatedUser,  deleteOrder);
 
 module.exports = router;

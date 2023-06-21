@@ -1,11 +1,9 @@
 const Order = require('../models/order');
 const Product = require('../models/product');
 
-const ErrorHandler = require('../utils/errorHandler');
-const catchAsyncErrors = require('../middlewares/catchAsyncErrors');
 
 // Create a new order   =>  /api/v1/order/new
-exports.newOrder = catchAsyncErrors(async (req, res, next) => {
+exports.newOrder = async (req, res, next) => {
 
 
     console.log(req.body , " this is order")
@@ -44,25 +42,25 @@ exports.newOrder = catchAsyncErrors(async (req, res, next) => {
         success: true,
         order
     })
-})
+}
 
 
 // Get single order   =>   /api/v1/order/:id
-exports.getSingleOrder = catchAsyncErrors(async (req, res, next) => {
+exports.getSingleOrder = async (req, res, next) => {
     const order = await Order.findById(req.params.id).populate('user', 'name email')
 
     if (!order) {
-        return next(new ErrorHandler('No Order found with this ID', 404))
+        return next(('No Order found with this ID', 404))
     }
 
     res.status(200).json({
         success: true,
         order
     })
-})
+}
 
 // Get logged in user orders   =>   /api/v1/orders/me
-exports.myOrders = catchAsyncErrors(async (req, res, next) => {
+exports.myOrders = async (req, res, next) => {
     const orders = await Order.find({ user: req.user.id }) 
 
 
@@ -70,21 +68,21 @@ exports.myOrders = catchAsyncErrors(async (req, res, next) => {
         success: true,
         orders
     })
-})
+}
 
 
 // Get all orders - ADMIN  =>   /api/v1/admin/orders/
-exports.allOrders = catchAsyncErrors(async (req, res, next) => {
+exports.allOrders = async (req, res, next) => {
     const orders = await Order.find()
     
     res.status(200).json({
         success: true,
         orders
     })
-})
+}
 
 // Update / Process order - ADMIN  =>   /api/v1/admin/order/:id
-exports.updateOrder = catchAsyncErrors(async (req, res, next) => {
+exports.updateOrder = async (req, res, next) => {
     const order = await Order.findById(req.params.id)  
 
     const id  = order.product; 
@@ -94,7 +92,7 @@ exports.updateOrder = catchAsyncErrors(async (req, res, next) => {
 
 
      if (order.orderStatus === 'Delivered') {
-        return next(new ErrorHandler('You have already delivered this order', 400))
+        return next(('You have already delivered this order', 400))
     }
 
         await updateStock(id, quantity)
@@ -108,7 +106,7 @@ exports.updateOrder = catchAsyncErrors(async (req, res, next) => {
     res.status(200).json({
         success: true,
     })
-})
+}
 
 async function updateStock(id, quantity) {
     const product = await Product.findById(id);
@@ -119,11 +117,11 @@ async function updateStock(id, quantity) {
 }
 
 // Delete order   =>   /api/v1/admin/order/:id
-exports.deleteOrder = catchAsyncErrors(async (req, res, next) => {
+exports.deleteOrder = async (req, res, next) => {
     const order = await Order.findById(req.params.id)
 
     if (!order) {
-        return next(new ErrorHandler('No Order found with this ID', 404))
+        return next(('No Order found with this ID', 404))
     }
 
     await order.remove()
@@ -131,13 +129,13 @@ exports.deleteOrder = catchAsyncErrors(async (req, res, next) => {
     res.status(200).json({
         success: true
     })
-})
+}
 
 
 
 // Get  logged in user/seller Orders => /api/v1/seller/orders 
 
-exports.sellerOrders = catchAsyncErrors(async(req,res,next) => { 
+exports.sellerOrders = async(req,res,next) => { 
     try { 
         const sellerOrders =  await Order.find({seller:req.user.id}); 
 
@@ -152,5 +150,5 @@ exports.sellerOrders = catchAsyncErrors(async(req,res,next) => {
     catch( err)  { 
         console.log(err); 
     }
-});
+};
 

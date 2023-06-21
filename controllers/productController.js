@@ -1,75 +1,126 @@
 const Product = require('../models/product')
 
-const ErrorHandler = require('../utils/errorHandler');
-const catchAsyncErrors = require('../middlewares/catchAsyncErrors');
-const APIFeatures = require('../utils/apiFeatures')
 const cloudinary = require('cloudinary');
 const user = require('../models/user');
 
+
+
+cloudinary.config({
+    cloud_name: 'dzpqal87c',
+    api_key: '937163133516412',
+    api_secret: 'xY7Nhgic_n-FkVfLJAfikAqGf38',
+  });
+
+
+  const uploadImagesToCloudinary = async (images) => {
+    const uploadedUrls = [];
+  
+    for (const image of images) {
+      const result = await cloudinary.uploader.upload(image, { folder: 'anokha' });
+      uploadedUrls.push(result.secure_url);
+    }
+  
+    return uploadedUrls;
+  };
 // Create new product   =>   /api/v1/admin/product/new
-exports.newProduct = catchAsyncErrors(async (req, res, next) => {
+exports.newProduct = async (req, res) => {
+    try {
+      const {
+        name,
+        price,
+        description,
+        category,
+        seller,
+        stock,
+        user,
+      } = req.body;
 
-    let images = []
-    if (typeof req.body.images === 'string') {
-        images.push(req.body.images)
-    } else {
-        images = req.body.images
-    }
 
-    let imagesLinks = [];
+      console.log(name, price, description, category, seller, stock , user );
 
-    for (let i = 0; i < images.length; i++) {
-        const result = await cloudinary.v2.uploader.upload(images[i], {
-            folder: 'products'
-        });
+      
+    ///Upload images to Cloudinary and obtain their URLs
+/*    const uploadPromises = images.map((image) =>
+        cloudinary.uploader.upload(image)
+      );
+      const uploadedImages = await Promise.all(uploadPromises);
+      const imageUrls = uploadedImages.map((image) => image.secure_url);
+    */
 
-        imagesLinks.push({
-            public_id: result.public_id,
-            url: result.secure_url
-        })
-    }
 
-    req.body.images = imagesLinks
-    req.body.user = req.user.id;
+      const { images } = req.body;
+      console.log(images, " these are images");
+      const uploadedUrls = await uploadImagesToCloudinary(images);
 
-    const product = await Product.create(req.body);
-
-    res.status(201).json({
+      const product = new Product({
+        name,
+        price,
+        description,
+        category,
+        seller,
+        stock,
+        images: uploadedUrls,
+        user,
+      });
+  
+      const createdProduct = await product.save();
+  
+      res.status(201).json({
         success: true,
-        product
-    })
-})
-
+        product: createdProduct,
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Internal Server Error' });
+    }
+  };
 
 // Get all products   =>   /api/v1/products?keyword=apple
-exports.getProducts = catchAsyncErrors(async (req, res, next) => {
+ exports.getProducts = async (req, res) => {
+    const { name, categories, minPrice, maxPrice, page, limit } = req.query;
+  
+    const filters = {};
+  
+    if (name) {
+      filters.name = { $regex: name, $options: 'i' };
+    }
+  
+    if (categories) {
+      filters.category = { $in: categories.split(',') };
+    }
+  
+    if (minPrice && maxPrice) {
+      filters.price = { $gte: minPrice, $lte: maxPrice };
+    }
+  
+    try {
+      const totalProducts = await Product.countDocuments(filters);
+  
+      const currentPage = parseInt(page, 10) || 1;
+      const pageSize = parseInt(limit, 10) || 10;
+      const totalPages = Math.ceil(totalProducts / pageSize);
+  
+      const products = await Product.find(filters)
+        .skip((currentPage - 1) * pageSize)
+        .limit(pageSize);
+  
+      res.status(200).json({
+        products,
+        currentPage,
+        pageSize,
+        totalPages,
+        totalProducts,
+      });
+    } catch (error) {
+      console.error('Error getting products:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
 
-    const resPerPage = 30;
-    const productsCount = await Product.countDocuments();
+};
 
-    const apiFeatures = new APIFeatures(Product.find(), req.query)
-        .search()
-        .filter()
-
-    let products = await apiFeatures.query;
-    let filteredProductsCount = products.length;
-
-    apiFeatures.pagination(resPerPage)
-    products = await apiFeatures.query;
-
-    res.status(200).json({
-        success: true,
-        productsCount,
-        resPerPage,
-        filteredProductsCount,
-        products
-
-    })
-
-})
+  
 
 // Get all products (Admin)  =>   /api/v1/admin/products
-exports.getAdminProducts = catchAsyncErrors(async (req, res, next) => {
+exports.getAdminProducts = async (req, res, next) => {
 
     const products = await Product.find();
 
@@ -78,15 +129,15 @@ exports.getAdminProducts = catchAsyncErrors(async (req, res, next) => {
         products
     })
 
-})
+}
 
 // Get single product details   =>   /api/v1/product/:id
-exports.getSingleProduct = catchAsyncErrors(async (req, res, next) => {
+exports.getSingleProduct = async (req, res, next) => {
 
     const product = await Product.findById(req.params.id);
 
     if (!product) {
-        return next(new ErrorHandler('Product not found', 404));
+        return next(('Product not found', 404));
     }
 
 
@@ -95,16 +146,16 @@ exports.getSingleProduct = catchAsyncErrors(async (req, res, next) => {
         product
     })
 
-})
+}
 
 // Update Product   =>   /api/v1/admin/product/:id
 
-exports.updateProduct = catchAsyncErrors(async (req, res, next) => {
+exports.updateProduct = async (req, res, next) => {
 
     let product = await Product.findById(req.params.id);
 
     if (!product) {
-        return next(new ErrorHandler('Product not found', 404));
+        return next(('Product not found', 404));
     }
 
     let images = []
@@ -149,15 +200,15 @@ exports.updateProduct = catchAsyncErrors(async (req, res, next) => {
         product
     })
 
-})
+}
 
 // Delete Product   =>   /api/v1/admin/product/:id
-exports.deleteProduct = catchAsyncErrors(async (req, res, next) => {
+exports.deleteProduct = async (req, res, next) => {
 
     const product = await Product.findById(req.params.id);
 
     if (!product) {
-        return next(new ErrorHandler('Product not found', 404));
+        return next(('Product not found', 404));
     }
 
     // Deleting images associated with the product
@@ -172,11 +223,11 @@ exports.deleteProduct = catchAsyncErrors(async (req, res, next) => {
         message: 'Product is deleted.'
     })
 
-})
+}
 
 
 // Create new review   =>   /api/v1/review
-exports.createProductReview = catchAsyncErrors(async (req, res, next) => {
+exports.createProductReview = async (req, res, next) => {
 
     const { rating, comment, productId } = req.body;
 
@@ -214,21 +265,21 @@ exports.createProductReview = catchAsyncErrors(async (req, res, next) => {
         success: true
     })
 
-})
+}
 
 
 // Get Product Reviews   =>   /api/v1/reviews
-exports.getProductReviews = catchAsyncErrors(async (req, res, next) => {
+exports.getProductReviews = async (req, res, next) => {
     const product = await Product.findById(req.query.id);
 
     res.status(200).json({
         success: true,
         reviews: product.reviews
     })
-})
+}
 
 // Delete Product Review   =>   /api/v1/reviews
-exports.deleteReview = catchAsyncErrors(async (req, res, next) => {
+exports.deleteReview = async (req, res, next) => {
 
     const product = await Product.findById(req.query.productId);
 
@@ -252,10 +303,10 @@ exports.deleteReview = catchAsyncErrors(async (req, res, next) => {
     res.status(200).json({
         success: true
     })
-})
+}
 
 
-exports.sellerProducts = catchAsyncErrors(async(req,res,next) => { 
+exports.sellerProducts = async(req,res,next) => { 
   try { 
     const perPage = 10; 
 
@@ -278,9 +329,9 @@ exports.sellerProducts = catchAsyncErrors(async(req,res,next) => {
 
   }
 
-})
+}
 
-exports.productliked = catchAsyncErrors(async(req,res,next) => { 
+exports.productliked = async(req,res,next) => { 
 
     try { 
         const product  = await Product.findByIdAndUpdate(req.body.productId, 
@@ -303,9 +354,9 @@ exports.productliked = catchAsyncErrors(async(req,res,next) => {
 
 
 
-})
+}
 
-exports.productunliked = catchAsyncErrors(async(req,res,next) => { 
+exports.productunliked = async(req,res,next) => { 
 
     try { 
         const product  = await Product.findByIdAndUpdate(req.body.productId, 
@@ -326,11 +377,11 @@ exports.productunliked = catchAsyncErrors(async(req,res,next) => {
 
 
 
-})
+}
 
 
 
-exports.productviewed = catchAsyncErrors(async(req, res, next) => { 
+exports.productviewed = async(req, res, next) => { 
 
     try {
         const product = await Product.findByIdAndUpdate(
@@ -346,4 +397,4 @@ exports.productviewed = catchAsyncErrors(async(req, res, next) => {
         console.log(err);
       }
 
-    })
+    }

@@ -20,7 +20,7 @@ const {
 
 } = require('../controllers/productController')
 
-const { isAuthenticatedUser, authorizeRoles } = require('../middlewares/auth');
+const { isAuthenticatedUser } = require('../middlewares/authMiddleware');
 
 
 router.route('/products').get(getProducts);
@@ -29,11 +29,11 @@ router.route('/product/:id').get(getSingleProduct);
 router.route("/productviewed/:id").put(productviewed); 
 
 
-router.route('/admin/product/new').post(isAuthenticatedUser, authorizeRoles('admin'), newProduct);
+router.route('/admin/product/new').post(isAuthenticatedUser,  newProduct);
 
 router.route('/admin/product/:id')
-    .put(isAuthenticatedUser, authorizeRoles('admin'), updateProduct)
-    .delete(isAuthenticatedUser, authorizeRoles('admin'), deleteProduct);
+    .put(isAuthenticatedUser,  updateProduct)
+    .delete(isAuthenticatedUser,  deleteProduct);
 
 // SELLER ROUTES 
 router.route('/sellerproducts/:sellerId/:page').get(isAuthenticatedUser,sellerProducts); 
