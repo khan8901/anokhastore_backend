@@ -12,11 +12,10 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 
 // Register a user   => /api/v1/register
-exports.registerUser = async (req, res, next) => {
-try {
+exports.register = async (req, res) => {
+  try {
     const { name, email, password } = req.body;
-     console.log(name, email, password, " these are it "); 
-     
+    
 
     // Check if user already exists
     const userExists = await User.findOne({ email });
@@ -35,17 +34,18 @@ try {
     });
 
     // Create JWT token
-    const token = jwt.sign({userId},secret);   
-    const success = true ; 
-    
+    const token = jwt.sign(
+      { userId: user._id, isAdmin: user.isAdmin },
+      JWT_SECRET,
+      { expiresIn: '30d' },
+    );
 
     res.status(201).json({ user, token });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Internal server error' });
   }
-
-}
+};
 
 // Login User  =>  /a[i/v1/login
 exports.loginUser = (async (req, res, next) => {

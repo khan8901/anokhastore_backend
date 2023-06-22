@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const {
-    registerUser,
+    register,
     loginUser,
   forgotPassword,
    resetPassword,
@@ -21,7 +21,7 @@ const {
 
 const { isAuthenticatedUser } = require('../middlewares/authMiddleware')
 
-router.route('/register').post(registerUser);
+router.route('/register').post(register);
 router.route('/login').post(loginUser);
 router.route('/password/forgot').post(forgotPassword);
 router.route('/password/reset').put(resetPassword);
