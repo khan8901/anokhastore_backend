@@ -4,9 +4,9 @@
   "description": "serverzero",
   "main": "server.js",
   "scripts": {
-    "start": "nodemon server.js",
+    "start": "node server.js",
     "dev": "nodemon server.js",
-    "prod": "nodemon server.js",
+    "prod": "node server.js",
     "seeder": "node backend/utils/seeder.js"
   },
   "author": "Muhammad Saad Ullah",
