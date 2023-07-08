@@ -38,9 +38,13 @@ exports.register = async (req, res) => {
       { userId: user._id, isAdmin: user.isAdmin },
       JWT_SECRET,
       { expiresIn: '30d' },
-    );
 
-    res.status(201).json({ user, token });
+    );
+    const success = true ; 
+
+   
+    res.status(201).json({ user, token ,success });
+    
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Internal server error' });
